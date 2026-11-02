@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>emotipot · 마음속 그릇, AI 아트 갤러리</title>
+<meta name="description" content="emotipot - 마음속 감정들을 예술로 피워냅니다">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Dongle:wght@300;400&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05060f;                    /* 배경(우주) */
+    --paper:rgba(16,20,40,.55);      /* 카드 배경(유리) */
+    --ink:#e8ecff;                   /* 기본 글자 */
+    --soft:#8f98c0;                  /* 보조 글자 */
+    --deep:#7df9ff;                  /* 포인트 색(네온 하늘) */
+    --violet:#b48cff;                /* 보조 포인트(네온 보라) */
+    --line:rgba(125,249,255,.16);    /* 테두리 */
+    --on:#05060f;                    /* 포인트 색 위 글자 */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:
+      radial-gradient(ellipse 60% 40% at 15% 10%,rgba(124,77,255,.22),transparent 70%),
+      radial-gradient(ellipse 50% 35% at 90% 35%,rgba(0,229,255,.14),transparent 70%),
+      radial-gradient(ellipse 60% 40% at 30% 85%,rgba(255,80,200,.10),transparent 70%),
+      var(--bg);background-attachment:fixed;color:var(--ink);font-family:'Gowun Dodum',sans-serif;line-height:1.7}
+  a{color:inherit;text-decoration:none}
+  /* 별 배경 + 사이버 격자 */
+  #stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:linear-gradient(rgba(125,249,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(125,249,255,.05) 1px,transparent 1px);
+    background-size:60px 60px;mask-image:linear-gradient(to bottom,transparent,#000 60%);-webkit-mask-image:linear-gradient(to bottom,transparent,#000 60%)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* 상단 메뉴 */
+  header{position:sticky;top:0;z-index:10;background:rgba(5,6,15,.65);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .logo{font-family:'Jua',sans-serif;font-size:24px;letter-spacing:.5px}
+  .logo span{color:var(--deep);text-shadow:0 0 12px rgba(125,249,255,.7)}
+  .menu{display:flex;gap:22px;font-size:16px;font-family:'Jua',sans-serif}
+  .menu a:hover{color:var(--deep)}
+  .menu{align-items:center}
+  .lang{font-family:'Jua',sans-serif;font-size:13px;color:var(--soft);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;letter-spacing:.5px}
+  .lang:hover{border-color:var(--deep)}
+  .lang span.on{color:var(--deep);text-shadow:0 0 8px rgba(125,249,255,.6)}
+
+  /* 첫 화면 */
+  .hero{padding:90px 0 70px;text-align:center}
+  .hero small{display:block;font-family:'Dongle',sans-serif;font-size:36px;line-height:1;letter-spacing:2px;color:var(--deep);text-shadow:0 0 12px rgba(125,249,255,.5)}
+  .hero h1{font-family:'Dongle',sans-serif;font-weight:400;font-size:clamp(46px,9vw,80px);line-height:1.05;margin:14px 0 18px;background:linear-gradient(90deg,#e8ecff,#7df9ff 45%,#b48cff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(125,249,255,.25))}
+  .hero p{margin-top:16px;color:var(--ink);font-size:20px;letter-spacing:1px;opacity:.9}
+  .hero p::before,.hero p::after{content:'“';color:var(--violet);margin-right:4px}
+  .hero p::after{content:'”';margin:0 0 0 4px}
+  .slogan{font-family:'Dongle',sans-serif;font-size:34px;line-height:1;margin-top:8px;color:var(--violet);letter-spacing:1px;text-shadow:0 0 14px rgba(180,140,255,.55)}
+  .btns{margin-top:32px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{font-family:'Jua',sans-serif;padding:12px 26px;border-radius:999px;font-size:15px;border:2px solid var(--deep);transition:.2s}
+  .btn.fill{background:var(--deep);color:var(--on);box-shadow:0 0 18px rgba(125,249,255,.45)}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 0 24px rgba(125,249,255,.6)}
+
+  section{padding:70px 0}
+  .title{font-family:'Dongle',sans-serif;font-weight:400;font-size:46px;line-height:1.1;text-align:center}
+  .sub{text-align:center;color:var(--soft);margin:6px 0 40px}
+
+  /* 갤러리 */
+  .slider{position:relative}
+  .gallery{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:6px 2px 18px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .gallery::-webkit-scrollbar{display:none}
+  .item{flex:0 0 calc((100% - 32px)/3);scroll-snap-align:start;border-radius:14px;overflow:hidden;background:var(--paper);backdrop-filter:blur(6px);border:1px solid var(--line);cursor:pointer;transition:.25s}
+  .item:hover{box-shadow:0 0 26px rgba(125,249,255,.25);border-color:rgba(125,249,255,.5)}
+  .item img,.item .ph{width:100%;aspect-ratio:4/5;object-fit:cover;display:flex}
+  .arrow{position:absolute;top:calc(50% - 30px);width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--deep);font-size:20px;cursor:pointer;box-shadow:0 0 14px rgba(125,249,255,.25);backdrop-filter:blur(6px);z-index:2}
+  .arrow.prev{left:-18px}
+  .arrow.next{right:-18px}
+  .arrow:hover{background:var(--deep);color:var(--on)}
+  .dots{display:flex;gap:8px;justify-content:center;margin-top:6px}
+  .dots span{width:7px;height:7px;border-radius:50%;background:var(--line);transition:.2s}
+  .dots span.on{background:var(--deep);box-shadow:0 0 8px var(--deep);width:20px;border-radius:4px}
+  .ph{display:flex;align-items:center;justify-content:center;color:rgba(200,215,255,.5);font-size:14px}
+  .cap{padding:12px 14px}
+  .cap b{font-family:'Dongle',sans-serif;font-weight:400;font-size:24px}
+  .cap p{color:var(--soft);font-size:13px}
+
+  /* 사진 크게 보기 */
+  .lightbox{position:fixed;inset:0;background:rgba(3,4,12,.94);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .lightbox.on{display:flex}
+  .lightbox img,.lightbox .ph{max-width:90vw;max-height:80vh;border-radius:10px}
+  .lightbox .ph{width:min(90vw,520px);height:min(80vh,520px)}
+
+  /* 이야기 속 노래 */
+  .origin-song{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+  .song-label{color:var(--deep)!important;font-size:14px;margin-bottom:10px!important}
+  .video{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:0 0 24px rgba(124,77,255,.18)}
+  .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+  /* 인스타 */
+  .insta-box{background:var(--paper);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:18px;padding:30px;text-align:center}
+  .insta-box .note{color:var(--soft);font-size:14px;margin-bottom:18px}
+
+  /* 스토어 */
+  .store{background:linear-gradient(135deg,rgba(124,77,255,.25),rgba(0,229,255,.12));backdrop-filter:blur(6px);box-shadow:0 0 40px rgba(124,77,255,.15);border:1px solid var(--line);border-radius:22px;padding:56px 30px;text-align:center}
+  .store h2{font-family:'Dongle',sans-serif;font-weight:400;font-size:42px;line-height:1.1;margin-bottom:10px}
+  .store p{color:var(--soft);margin-bottom:26px}
+  .store .btn{background:var(--deep);color:var(--on)}
+
+  /* 소개 */
+  .about{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .about .ph{aspect-ratio:4/5;border-radius:18px}
+  .about h2{font-family:'Dongle',sans-serif;font-weight:400;font-size:42px;line-height:1.1;margin-bottom:16px}
+  .about p{color:var(--soft);margin-bottom:12px}
+
+  footer{border-top:1px solid var(--line);padding:40px 0;text-align:center;color:var(--soft);font-size:14px}
+  footer .links{display:flex;gap:18px;justify-content:center;margin-bottom:10px}
+  footer a:hover{color:var(--deep)}
+
+  @media (max-width:720px){
+    .item{flex:0 0 78%}
+    .arrow{display:none}
+    .menu{gap:14px;font-size:14px}
+    .about{grid-template-columns:1fr}
+    section{padding:54px 0}
+  }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a href="#" class="logo">emoti<span>pot</span></a>
+      <div class="menu">
+        <a href="#about" data-en="Story">이야기</a>
+        <a href="#gallery" data-en="Gallery">갤러리</a>
+        <a href="https://smartstore.naver.com/emotipot" target="_blank" data-en="Store">스토어</a>
+        <button class="lang" id="langBtn" aria-label="언어 변경"><span data-l="ko">한</span>/<span data-l="en">EN</span></button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <small data-en="emotipot">마음화분</small>
+    <p data-en="Turning inner emotions into art">마음속 감정들을 예술로 피워냅니다</p>
+    <div class="btns">
+      <a href="#about" class="btn" data-en="Story">이야기</a>
+      <a href="#gallery" class="btn fill" data-en="Gallery">갤러리</a>
+      <a href="https://smartstore.naver.com/emotipot" target="_blank" class="btn" data-en="Store">스토어</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 이야기 ============ -->
+<section id="about">
+  <div class="wrap about">
+    <div class="ph" style="background:linear-gradient(160deg,#1a1d4a,#0b2a3a);border:1px solid var(--line)" data-en="Featured work">대표 작품 자리</div>
+    <div>
+      <h2 data-en="The emotipot story">emotipot 이야기</h2>
+      <p data-en="emotipot combines 'emotion' and 'pot' &mdash; <b style=&quot;color:var(--deep)&quot;>a vessel that holds feelings</b>.">emotipot은 'emotion'과 'pot', 곧 <b style="color:var(--deep)">감정을 담는 그릇</b>이라는 뜻입니다.</p>
+      <p data-en="It all began with small plant pots made to carry a message from the heart. Just as every pot grows its own plant, every heart grows its own emotions.">처음에는 작은 화분에 마음을 담아 전하는 '마음화분'으로 시작했습니다. 화분마다 저마다의 식물이 자라듯, 사람의 마음속에도 저마다의 감정이 자랍니다.</p>
+      <p data-en="Now we draw out the many emotions gathered in that vessel, and bring them to life as AI art.">이제 그 그릇 속에 고여 있던 다양한 감정들을 AI 아트로 꺼내어 보여드리려 합니다.</p>
+      <div class="origin-song">
+        <p class="song-label" data-en="&#9835; The song where it all began &middot; Heart Pot (J밌고 C나는 BAND)">&#9835; emotipot이 시작된 노래 · 마음화분 (J밌고 C나는 BAND)</p>
+        <div class="video">
+          <iframe src="https://www.youtube-nocookie.com/embed/MVFKfpCu5oM" title="마음화분 - J밌고 C나는 BAND" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 갤러리 ============ -->
+<section id="gallery">
+  <div class="wrap">
+    <h2 class="title">Gallery</h2>
+    <p class="sub" data-en="Scenes shaped by emotion">감정이 빚어낸 장면들</p>
+    <div class="slider">
+      <button class="arrow prev" id="prevBtn" aria-label="이전">‹</button>
+      <div class="gallery" id="galleryGrid"></div>
+      <button class="arrow next" id="nextBtn" aria-label="다음">›</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+</section>
+
+<!-- ============ 인스타그램 ============ -->
+<section id="instagram" style="padding-top:0">
+  <div class="wrap">
+    <h2 class="title">Instagram</h2>
+    <p class="sub" data-en="See new works first on Instagram">새로운 작품은 인스타그램에서 먼저 만나요</p>
+    <div class="insta-box">
+      <!-- 인스타 위젯(Behold) 코드를 받으면 아래 줄을 그 코드로 바꿉니다 -->
+      <p class="note" data-en="Latest Instagram posts will appear here automatically (coming soon)">인스타그램 최신 게시물이 이곳에 자동으로 표시됩니다 (연결 준비 중)</p>
+      <a href="https://www.instagram.com/" target="_blank" class="btn fill" data-en="Follow on Instagram">인스타그램 팔로우</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="mailto:emotipot@gmail.com" data-en="Email">이메일</a>
+      <a href="https://www.instagram.com/" target="_blank" data-en="Instagram">인스타그램</a>
+      <a href="https://smartstore.naver.com/emotipot" target="_blank" data-en="Smart Store">스마트스토어</a>
+    </div>
+    <p>© emotipot</p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox"></div>
+
+<script>
+/* =====================================================
+   갤러리 사진 목록
+   사진을 추가하려면: images 폴더에 사진을 올리고
+   아래 목록에 한 줄씩 추가하면 됩니다.
+   예) { img: "images/photo1.jpg" },
+   사진 아래 글을 넣고 싶으면: { img: "images/photo1.jpg", title: "제목", text: "설명" },
+   img를 비워두면 색깔 자리표시가 나옵니다.
+   ===================================================== */
+const photos = [
+  { img: "", color: "linear-gradient(160deg,#16194a,#0a2a3d)" },
+  { img: "", color: "linear-gradient(160deg,#2a1248,#101634)" },
+  { img: "", color: "linear-gradient(160deg,#0c2f3f,#1a1240)" },
+  { img: "", color: "linear-gradient(160deg,#20123d,#0b1d33)" },
+  { img: "", color: "linear-gradient(160deg,#0e2440,#2b1446)" },
+  { img: "", color: "linear-gradient(160deg,#161a40,#0a3236)" },
+  { img: "", color: "linear-gradient(160deg,#2d1240,#0f1838)" },
+  { img: "", color: "linear-gradient(160deg,#0b2838,#1b1648)" },
+  { img: "", color: "linear-gradient(160deg,#1c1446,#0a2534)" },
+];
+
+const grid = document.getElementById('galleryGrid');
+const lb = document.getElementById('lightbox');
+
+photos.forEach(p => {
+  const el = document.createElement('div');
+  el.className = 'item';
+  const alt = p.title || 'emotipot gallery';
+  const media = p.img
+    ? `<img src="${p.img}" alt="${alt}" loading="lazy">`
+    : `<div class="ph" style="background:${p.color || '#dfe7e0'}">작품 자리</div>`;
+  const cap = (p.title || p.text)
+    ? `<div class="cap">${p.title ? `<b>${p.title}</b>` : ''}${p.text ? `<p>${p.text}</p>` : ''}</div>`
+    : '';
+  el.innerHTML = media + cap;
+  el.onclick = () => {
+    lb.innerHTML = p.img
+      ? `<img src="${p.img}" alt="${alt}">`
+      : `<div class="ph" style="background:${p.color || '#dfe7e0'}">작품 자리</div>`;
+    lb.classList.add('on');
+  };
+  grid.appendChild(el);
+});
+lb.onclick = () => lb.classList.remove('on');
+
+/* 옆으로 넘기기: 화살표 버튼과 점 표시 */
+const step = () => grid.querySelector('.item').offsetWidth + 16;
+document.getElementById('prevBtn').onclick = () => grid.scrollBy({ left: -step() });
+document.getElementById('nextBtn').onclick = () => grid.scrollBy({ left: step() });
+
+const dots = document.getElementById('dots');
+photos.forEach((_, i) => {
+  const d = document.createElement('span');
+  d.onclick = () => grid.scrollTo({ left: i * step() });
+  dots.appendChild(d);
+});
+const updateDots = () => {
+  const i = Math.round(grid.scrollLeft / step());
+  [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
+};
+grid.addEventListener('scroll', updateDots);
+updateDots();
+
+/* 한/영 전환 */
+const tr = [...document.querySelectorAll('[data-en]')];
+tr.forEach(el => el.dataset.ko = el.innerHTML);
+function setLang(l){
+  tr.forEach(el => el.innerHTML = l === 'en' ? el.dataset.en : el.dataset.ko);
+  document.documentElement.lang = l;
+  document.querySelectorAll('#langBtn span').forEach(sp => sp.classList.toggle('on', sp.dataset.l === l));
+  try { localStorage.setItem('lang', l); } catch(e) {}
+}
+let cur = 'ko';
+try { cur = localStorage.getItem('lang') || 'ko'; } catch(e) {}
+setLang(cur);
+document.getElementById('langBtn').onclick = () => { cur = cur === 'ko' ? 'en' : 'ko'; setLang(cur); };
+
+/* 반짝이는 별 배경 */
+const cv = document.getElementById('stars'), cx = cv.getContext('2d');
+let stars = [];
+function makeStars(){
+  cv.width = innerWidth; cv.height = innerHeight;
+  stars = Array.from({length: Math.round(innerWidth*innerHeight/6000)}, () => ({
+    x: Math.random()*cv.width, y: Math.random()*cv.height,
+    r: Math.random()*1.3+0.2, t: Math.random()*6, s: Math.random()*0.02+0.005
+  }));
+}
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  stars.forEach(st => {
+    st.t += st.s;
+    cx.globalAlpha = 0.35 + Math.sin(st.t)*0.35 + 0.3;
+    cx.fillStyle = st.r > 1.1 ? '#bff8ff' : '#ffffff';
+    cx.beginPath(); cx.arc(st.x, st.y, st.r, 0, Math.PI*2); cx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+addEventListener('resize', makeStars);
+makeStars(); draw();
+</script>
+</body>
+</html>
